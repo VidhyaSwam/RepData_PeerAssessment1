@@ -1,25 +1,85 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+#Course 5 Reproducible Research - Peer grade assignment 1
+## Activity Monitoring device analysis
+###Date: 11/01/2017
+###Coded by: Vidhya Swaminathan
 
+### Read dataset into dataframe for processing
 
-## Loading and preprocessing the data
+```{r Create Dataframe, echo=TRUE}
+setwd("C:/Temp/Coursera/ReproducibleResearch/Wk2Prj")
 
+if(!file.exists("activity.csv")) { unzip("repdata_data_activity.zip") }
 
+activity_ds = read.csv("activity.csv")
 
-## What is mean total number of steps taken per day?
+```
 
+### Create a histogram of the total number of steps taken each day
+```{r Create Histogram/Date, echo=TRUE}
+activity_steps_by_day <- aggregate(steps ~ date, activity_ds, sum, na.action = na.pass)
+hist(activity_steps_by_day$steps, col="orange", main = "Total no steps/day", xlab = "No of steps")
 
+```
 
-## What is the average daily activity pattern?
+### Mean and median number of steps taken each day
+```{r Mean/ Median on steps each day, echo=TRUE}
+r_steps_mean <- mean(activity_steps_by_day$steps)
+message("Mean = ", r_steps_mean)
 
+r_steps_medn <- median(activity_steps_by_day$steps)
+message("Median = ", r_steps_medn)
+```
 
+### Create a Time series plot for the average number of steps taken. 
 
-## Imputing missing values
+```{r time series, echo=TRUE}
+activity_mean_interval <- tapply(activity_ds$steps, activity_ds$interval, mean, na.rm = T)
 
+plot(activity_mean_interval, type = "l", main = "Time Series Plot", xlab = "The 5 minute interval", ylab = "The Average no of steps")
 
+```
 
-## Are there differences in activity patterns between weekdays and weekends?
+### Pick the first 10 data for the 5-minute interval that, on average, contains the maximum number of steps
+
+```{r max no. of steps, echo=TRUE}
+head(sort(activity_mean_interval, decreasing = TRUE), 1)
+```
+
+### To compute and show a strategy for imputing missing data
+
+```{r, echo=TRUE}
+
+activity_stepsNA <- sum(is.na(activity_ds$steps))
+activity_dateNA <- sum(is.na(activity_ds$date))
+activity_intvlNA <- sum(is.na(activity_ds$interval))
+
+message("Missing Steps = ", activity_stepsNA)
+message("Missing Dates = ", activity_dateNA)
+message("Missing Interval = ", activity_intvlNA)
+
+table(is.na(activity_ds$steps), activity_ds$interval, activity_ds$date)
+
+```
+
+### Histogram graph for the total number of steps taken each day after imputing missing data
+```{r, echo=TRUE}
+activity_steps_by_day <- aggregate(steps ~ date, activity_ds, sum, na.action = na.exclude)
+hist(activity_steps_by_day$steps, col="orange", main = "Total no steps/day", xlab = "No. of steps")
+```
+
+### Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+```{r comparison, echo=TRUE}
+weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+activity_ds$dow = as.factor(ifelse(is.element(weekdays(as.Date(activity_ds$date)),weekdays), "Weekday", "Weekend"))
+
+steps_by_interval_activity <- aggregate(steps ~ interval + dow, activity_ds, mean)
+
+library(lattice)
+
+xyplot(steps_by_interval_activity$steps ~ steps_by_interval_activity$interval|steps_by_interval_activity$dow, main="Average steps/day by interval",xlab="Interval", ylab="Steps",layout=c(1,2), type="l")
+
+```
+
+### End of document
